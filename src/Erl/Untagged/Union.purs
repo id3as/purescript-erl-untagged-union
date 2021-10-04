@@ -60,7 +60,6 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, reflectSymbol)
-import Debug.Trace (spy)
 import Erl.Atom (Atom, atom)
 import Erl.Atom.Symbol as AtomSymbol
 import Erl.Data.Binary (Binary)
@@ -128,8 +127,7 @@ on f g u =
     rem = unsafeCoerce
 
 case_ :: forall x. Union Nil -> x
-case_ _u = do
-  let _ = spy "unexpected message" _u
+case_ _ = do
   unsafeCrashWith "unexpected message"
 
 term_ :: forall x. (Foreign -> x) -> Union Term -> x

@@ -8,7 +8,6 @@ You can edit this file as you like.
   , "erl-binary"
   , "erl-lists"
   , "erl-tuples"
-  , "debug"
   , "foreign"
   , "typelevel-prelude"
   , "maybe"
