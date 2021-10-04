@@ -128,7 +128,7 @@ on f g u =
 
 case_ :: forall x. Union Nil -> x
 case_ _ = do
-  unsafeCrashWith "unexpected message"
+  unsafeCrashWith "unmatched data in union"
 
 term_ :: forall x. (Foreign -> x) -> Union Term -> x
 term_ f u = f (unsafeToForeign u)
