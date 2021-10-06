@@ -26,6 +26,8 @@ module Erl.Untagged.Union
   , class IsAmbiguous'
   , class IsAmbiguousType
   , class RuntimeTypeMatch
+  , class HasNoConversions
+  , class HasNoConversionsRT
   , isMatch
   , WasMatch
   , class MaybeFail
@@ -57,7 +59,6 @@ module Erl.Untagged.Union
   ) where
 
 import Prelude
-
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Debug.Trace (spy)
@@ -66,6 +67,7 @@ import Erl.Atom.Symbol as AtomSymbol
 import Erl.Data.Binary (Binary)
 import Erl.Data.List (List)
 import Erl.Data.Tuple (Tuple1, Tuple2, Tuple3, Tuple4, Tuple5, Tuple6, Tuple7, Tuple8, Tuple9, Tuple10, tuple1, tuple2, tuple3, tuple4, tuple5, tuple6, tuple7, tuple8, tuple9, tuple10, uncurry1, uncurry2, uncurry3, uncurry4, uncurry5, uncurry6, uncurry7, uncurry8, uncurry9, uncurry10)
+import Erl.Kernel.Erlang (termToString)
 import Foreign (Foreign, unsafeToForeign)
 import Partial.Unsafe (unsafeCrashWith)
 import Prim.Boolean (False, True)
@@ -124,8 +126,8 @@ on f g u =
     Just a -> f a
     Nothing -> g (rem u)
   where
-    rem :: Union choices -> Union rem
-    rem = unsafeCoerce
+  rem :: Union choices -> Union rem
+  rem = unsafeCoerce
 
 case_ :: forall x. Union Nil -> x
 case_ _u = do
@@ -170,8 +172,9 @@ instance evaluateRuntimeTypeLiteralAtom ::
   isMatch _ _ = matchTest (const Match) <<< isLiteralAtom (reflectSymbol (Proxy :: _ sym))
 
 instance evaluateRuntimeTypeLiteralAtomConvert ::
-  (IsSymbol sym
-  , IsSymbol convSym) =>
+  ( IsSymbol sym
+  , IsSymbol convSym
+  ) =>
   RuntimeTypeMatch choices (RTLiteralAtomConvert sym convSym) where
   isMatch _ _ = matchTest (\_ -> Converted (unsafeToForeign $ atom (reflectSymbol (Proxy :: _ convSym)))) <<< isLiteralAtom (reflectSymbol (Proxy :: _ sym))
 
@@ -513,9 +516,8 @@ matchMap _match conv (Converted val) = conv val
 class IsInChoices :: Type -> Choices -> Choices -> Constraint
 class IsInChoices item choices rem | item choices -> rem
 
-instance isInChoicesMatch :: IsInChoices item (Item item tail) tail
-
-else instance isInChoicesRecurse ::
+instance IsInChoices item (Item item tail) tail
+else instance
   ( IsInChoices item tail remTail
   ) =>
   IsInChoices item (Item t tail) (Item t remTail)
@@ -523,8 +525,120 @@ else instance isInChoicesRecurse ::
 class IsSupportedMessage :: Type -> Type -> Constraint
 class IsSupportedMessage msg1 msg2
 
-instance isSupportedMessageUnion :: (IsInChoices msg choices t1) => IsSupportedMessage msg (Union choices)
-else instance isSupportedMessageExact :: IsSupportedMessage msg msg
+instance (IsInChoices msg choices t1) => IsSupportedMessage msg (Union choices)
+else instance (HasNoConversions msg) => IsSupportedMessage msg msg
+
+class HasNoConversions :: Type -> Constraint
+class HasNoConversions msg
+
+instance HasNoConversions (Union choices)
+else instance
+  ( RuntimeType msg t
+  , HasNoConversionsRT t
+  ) =>
+  HasNoConversions msg
+
+class HasNoConversionsRT :: RTTerm -> Constraint
+class HasNoConversionsRT term
+
+instance
+  ( HasNoConversionsRT a
+  , HasNoConversionsRT b
+  ) =>
+  HasNoConversionsRT (RTOption a b)
+instance HasNoConversionsRT RTWildcard
+instance HasNoConversionsRT RTAtom
+instance HasNoConversionsRT (RTLiteralAtom symbol)
+instance HasNoConversionsRT RTInt
+instance HasNoConversionsRT RTString
+instance HasNoConversionsRT RTBinary
+instance HasNoConversionsRT RTList
+instance HasNoConversionsRT RTNumber
+instance
+  ( HasNoConversionsRT a
+  ) =>
+  HasNoConversionsRT (RTTuple1 a)
+instance
+  ( HasNoConversionsRT a
+  , HasNoConversionsRT b
+  ) =>
+  HasNoConversionsRT (RTTuple2 a b)
+instance
+  ( HasNoConversionsRT a
+  , HasNoConversionsRT b
+  , HasNoConversionsRT c
+  ) =>
+  HasNoConversionsRT (RTTuple3 a b c)
+instance
+  ( HasNoConversionsRT a
+  , HasNoConversionsRT b
+  , HasNoConversionsRT c
+  , HasNoConversionsRT d
+  ) =>
+  HasNoConversionsRT (RTTuple4 a b c d)
+instance
+  ( HasNoConversionsRT a
+  , HasNoConversionsRT b
+  , HasNoConversionsRT c
+  , HasNoConversionsRT d
+  , HasNoConversionsRT e
+  ) =>
+  HasNoConversionsRT (RTTuple5 a b c d e)
+instance
+  ( HasNoConversionsRT a
+  , HasNoConversionsRT b
+  , HasNoConversionsRT c
+  , HasNoConversionsRT d
+  , HasNoConversionsRT e
+  , HasNoConversionsRT f
+  ) =>
+  HasNoConversionsRT (RTTuple6 a b c d e f)
+instance
+  ( HasNoConversionsRT a
+  , HasNoConversionsRT b
+  , HasNoConversionsRT c
+  , HasNoConversionsRT d
+  , HasNoConversionsRT e
+  , HasNoConversionsRT f
+  , HasNoConversionsRT g
+  ) =>
+  HasNoConversionsRT (RTTuple7 a b c d e f g)
+instance
+  ( HasNoConversionsRT a
+  , HasNoConversionsRT b
+  , HasNoConversionsRT c
+  , HasNoConversionsRT d
+  , HasNoConversionsRT e
+  , HasNoConversionsRT f
+  , HasNoConversionsRT g
+  , HasNoConversionsRT h
+  ) =>
+  HasNoConversionsRT (RTTuple8 a b c d e f g h)
+instance
+  ( HasNoConversionsRT a
+  , HasNoConversionsRT b
+  , HasNoConversionsRT c
+  , HasNoConversionsRT d
+  , HasNoConversionsRT e
+  , HasNoConversionsRT f
+  , HasNoConversionsRT g
+  , HasNoConversionsRT h
+  , HasNoConversionsRT i
+  ) =>
+  HasNoConversionsRT (RTTuple9 a b c d e f g h i)
+instance
+  ( HasNoConversionsRT a
+  , HasNoConversionsRT b
+  , HasNoConversionsRT c
+  , HasNoConversionsRT d
+  , HasNoConversionsRT e
+  , HasNoConversionsRT f
+  , HasNoConversionsRT g
+  , HasNoConversionsRT h
+  , HasNoConversionsRT i
+  , HasNoConversionsRT j
+  ) =>
+  HasNoConversionsRT (RTTuple10 a b c d e f g h i j)
 
 ------------------------------------------------------------------------------
 -- RuntimeType - get the description of the runtime type
