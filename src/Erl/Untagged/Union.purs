@@ -17,6 +17,8 @@ module Erl.Untagged.Union
   , TermWithType
   , ItemWithType
   , class ValidChoices
+  , class ReceivesMessage
+  , class CanReceiveMessage
   , class IsSupportedMessage
   , class IsInChoices
   , class RuntimeType
@@ -66,6 +68,7 @@ import Erl.Atom.Symbol as AtomSymbol
 import Erl.Data.Binary (Binary)
 import Erl.Data.List (List)
 import Erl.Data.Tuple (Tuple1, Tuple2, Tuple3, Tuple4, Tuple5, Tuple6, Tuple7, Tuple8, Tuple9, Tuple10, tuple1, tuple2, tuple3, tuple4, tuple5, tuple6, tuple7, tuple8, tuple9, tuple10, uncurry1, uncurry2, uncurry3, uncurry4, uncurry5, uncurry6, uncurry7, uncurry8, uncurry9, uncurry10)
+import Erl.Process (ProcessM, ProcessTrapM)
 import Foreign (Foreign, unsafeToForeign)
 import Partial.Unsafe (unsafeCrashWith)
 import Prim.Boolean (False, True)
@@ -519,8 +522,19 @@ else instance
   ) =>
   IsInChoices item (Item t tail) (Item t remTail)
 
+class ReceivesMessage :: forall k. k -> Type -> Constraint
+class ReceivesMessage a msg | a -> msg
+
+instance ReceivesMessage (ProcessM msg) msg
+instance ReceivesMessage (ProcessTrapM msg) msg
+
+class CanReceiveMessage :: Type -> (Type -> Type) -> Constraint
+class CanReceiveMessage msg m
+
+instance (ReceivesMessage m canReceive, IsSupportedMessage msg canReceive) => CanReceiveMessage msg m
+
 class IsSupportedMessage :: Type -> Type -> Constraint
-class IsSupportedMessage msg1 msg2
+class IsSupportedMessage msg canReceive
 
 instance (IsInChoices msg choices t1) => IsSupportedMessage msg (Union choices)
 else instance (HasNoConversions msg) => IsSupportedMessage msg msg
