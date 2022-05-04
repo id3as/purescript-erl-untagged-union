@@ -58,6 +58,7 @@ module Erl.Untagged.Union
   , RTTuple8
   , RTTuple9
   , RTTuple10
+  , contractProcess
   ) where
 
 import Prelude
@@ -68,7 +69,7 @@ import Erl.Atom.Symbol as AtomSymbol
 import Erl.Data.Binary (Binary)
 import Erl.Data.List (List)
 import Erl.Data.Tuple (Tuple1, Tuple2, Tuple3, Tuple4, Tuple5, Tuple6, Tuple7, Tuple8, Tuple9, Tuple10, tuple1, tuple2, tuple3, tuple4, tuple5, tuple6, tuple7, tuple8, tuple9, tuple10, uncurry1, uncurry2, uncurry3, uncurry4, uncurry5, uncurry6, uncurry7, uncurry8, uncurry9, uncurry10)
-import Erl.Process (ProcessM, ProcessTrapM)
+import Erl.Process (ProcessM, ProcessTrapM, Process)
 import Foreign (Foreign, unsafeToForeign)
 import Partial.Unsafe (unsafeCrashWith)
 import Prim.Boolean (False, True)
@@ -136,6 +137,9 @@ case_ _ = do
 
 term_ :: forall x. (Foreign -> x) -> Union Term -> x
 term_ f u = f (unsafeToForeign u)
+
+contractProcess :: forall subsetMsg msg. IsSupportedMessage subsetMsg msg => Process msg -> Process subsetMsg
+contractProcess = unsafeCoerce
 
 ------------------------------------------------------------------------------
 -- RuntimeTypeMatch - check a runtime type
