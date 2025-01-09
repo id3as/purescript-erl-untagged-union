@@ -85,44 +85,45 @@ foreign import data Term :: Choices
 foreign import data Item :: Type -> Choices -> Choices
 
 data Union :: Choices -> Type
-data Union choices
-  = Union
+data Union choices = Union
 
 infixr 7 type Item as |+|
 
 type Apply :: forall k1 k2. (k1 -> k2) -> k1 -> k2
-type Apply a b
-  = a b
+type Apply a b = a b
+
 infixr 1 type Apply as |$|
 
-inj ::
-  forall a choices rem.
-  IsInChoices a choices rem =>
-  ValidChoices choices =>
-  a -> Union choices
+inj
+  :: forall a choices rem
+   . IsInChoices a choices rem
+  => ValidChoices choices
+  => a
+  -> Union choices
 inj = unsafeCoerce
 
-prj ::
-  forall a choices d rem.
-  IsInChoices a choices rem =>
-  RuntimeType a d =>
-  RuntimeTypeMatch (Item a Nil) d =>
-  Union choices -> Maybe a
+prj
+  :: forall a choices d rem
+   . IsInChoices a choices rem
+  => RuntimeType a d
+  => RuntimeTypeMatch (Item a Nil) d
+  => Union choices
+  -> Maybe a
 prj union = do
   case isMatch (Proxy :: _ (Item a Nil)) (Proxy :: _ d) (unsafeToForeign union) of
     Match -> Just $ unsafeCoerce union
     Converted converted -> Just $ unsafeCoerce converted
     NoMatch -> Nothing
 
-on ::
-  forall a x d choices rem.
-  IsInChoices a choices rem =>
-  RuntimeType a d =>
-  RuntimeTypeMatch (Item a Nil) d =>
-  (a -> x) ->
-  (Union rem -> x) ->
-  Union choices ->
-  x
+on
+  :: forall a x d choices rem
+   . IsInChoices a choices rem
+  => RuntimeType a d
+  => RuntimeTypeMatch (Item a Nil) d
+  => (a -> x)
+  -> (Union rem -> x)
+  -> Union choices
+  -> x
 on f g u =
   case prj u of
     Just a -> f a
@@ -171,7 +172,8 @@ instance evaluateRuntimeTypeList :: RuntimeTypeMatch choices RTList where
   isMatch _ _ = matchTest (const Match) <<< isList
 
 instance evaluateRuntimeTypeLiteralAtom ::
-  (IsSymbol sym) =>
+  ( IsSymbol sym
+  ) =>
   RuntimeTypeMatch choices (RTLiteralAtom sym) where
   isMatch _ _ = matchTest (const Match) <<< isLiteralAtom (reflectSymbol (Proxy :: _ sym))
 
@@ -561,9 +563,11 @@ instance
   , HasNoConversionsRT b
   ) =>
   HasNoConversionsRT (RTOption a b)
+
 instance HasNoConversionsRT RTWildcard
 instance HasNoConversionsRT RTAtom
 instance HasNoConversionsRT (RTLiteralAtom symbol)
+instance HasNoConversionsRT (RTLiteralAtomConvert symbol1 symbol2)
 instance HasNoConversionsRT RTInt
 instance HasNoConversionsRT RTString
 instance HasNoConversionsRT RTBinary
@@ -573,17 +577,20 @@ instance
   ( HasNoConversionsRT a
   ) =>
   HasNoConversionsRT (RTTuple1 a)
+
 instance
   ( HasNoConversionsRT a
   , HasNoConversionsRT b
   ) =>
   HasNoConversionsRT (RTTuple2 a b)
+
 instance
   ( HasNoConversionsRT a
   , HasNoConversionsRT b
   , HasNoConversionsRT c
   ) =>
   HasNoConversionsRT (RTTuple3 a b c)
+
 instance
   ( HasNoConversionsRT a
   , HasNoConversionsRT b
@@ -591,6 +598,7 @@ instance
   , HasNoConversionsRT d
   ) =>
   HasNoConversionsRT (RTTuple4 a b c d)
+
 instance
   ( HasNoConversionsRT a
   , HasNoConversionsRT b
@@ -599,6 +607,7 @@ instance
   , HasNoConversionsRT e
   ) =>
   HasNoConversionsRT (RTTuple5 a b c d e)
+
 instance
   ( HasNoConversionsRT a
   , HasNoConversionsRT b
@@ -608,6 +617,7 @@ instance
   , HasNoConversionsRT f
   ) =>
   HasNoConversionsRT (RTTuple6 a b c d e f)
+
 instance
   ( HasNoConversionsRT a
   , HasNoConversionsRT b
@@ -618,6 +628,7 @@ instance
   , HasNoConversionsRT g
   ) =>
   HasNoConversionsRT (RTTuple7 a b c d e f g)
+
 instance
   ( HasNoConversionsRT a
   , HasNoConversionsRT b
@@ -629,6 +640,7 @@ instance
   , HasNoConversionsRT h
   ) =>
   HasNoConversionsRT (RTTuple8 a b c d e f g h)
+
 instance
   ( HasNoConversionsRT a
   , HasNoConversionsRT b
@@ -641,6 +653,7 @@ instance
   , HasNoConversionsRT i
   ) =>
   HasNoConversionsRT (RTTuple9 a b c d e f g h i)
+
 instance
   ( HasNoConversionsRT a
   , HasNoConversionsRT b
@@ -867,11 +880,12 @@ class MaybeFail :: Boolean -> Type -> RTTerm -> Type -> RTTerm -> Constraint
 class MaybeFail result toCheck toCheckType compare compareType
 
 instance maybeFailTrue ::
-  ( TE.Fail ( TE.Above (TE.Text "Ambiguous Union")
-        ( TE.Above (TE.Beside (TE.Quote toCheck) (TE.Beside (TE.Text " : ") (TE.Quote (Proxy toCheckType))))
-            (TE.Beside (TE.Quote compare) (TE.Beside (TE.Text " : ") (TE.Quote (Proxy compareType))))
-        )
-    )
+  ( TE.Fail
+      ( TE.Above (TE.Text "Ambiguous Union")
+          ( TE.Above (TE.Beside (TE.Quote toCheck) (TE.Beside (TE.Text " : ") (TE.Quote (Proxy toCheckType))))
+              (TE.Beside (TE.Quote compare) (TE.Beside (TE.Text " : ") (TE.Quote (Proxy compareType))))
+          )
+      )
   ) =>
   MaybeFail True toCheck toCheckType compare compareType
 
@@ -1036,8 +1050,10 @@ class CanShow choices where
 
 instance canShowNil :: CanShow Nil where
   showItem _ _ = "invalid"
+
 instance canShowTerm :: CanShow Term where
   showItem _ _ = "unhandled"
+
 instance canShowCons ::
   ( CanShow tail
   , Show item
@@ -1059,8 +1075,10 @@ class CanEq choices where
 
 instance canEqNil :: CanEq Nil where
   eqItem _ _ _ = false
+
 instance canEqTerm :: CanEq Term where
   eqItem _ _ _ = false
+
 instance canEqCons ::
   ( CanEq tail
   , Eq item
