@@ -62,6 +62,8 @@ module Erl.Untagged.Union
   ) where
 
 import Prelude
+
+import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Erl.Atom (Atom, atom)
@@ -70,6 +72,8 @@ import Erl.Data.Binary (Binary)
 import Erl.Data.List (List)
 import Erl.Data.Tuple (Tuple1, Tuple2, Tuple3, Tuple4, Tuple5, Tuple6, Tuple7, Tuple8, Tuple9, Tuple10, tuple1, tuple2, tuple3, tuple4, tuple5, tuple6, tuple7, tuple8, tuple9, tuple10, uncurry1, uncurry2, uncurry3, uncurry4, uncurry5, uncurry6, uncurry7, uncurry8, uncurry9, uncurry10)
 import Erl.Process (ProcessM, ProcessTrapM, Process)
+import Erl.ProcessT (ProcessTM)
+import Erl.ProcessT.MonitorT (MonitorT)
 import Foreign (Foreign, unsafeToForeign)
 import Partial.Unsafe (unsafeCrashWith)
 import Prim.Boolean (False, True)
@@ -533,6 +537,9 @@ class ReceivesMessage a msg | a -> msg
 
 instance ReceivesMessage (ProcessM msg) msg
 instance ReceivesMessage (ProcessTrapM msg) msg
+-- instance (ReceivesMessage innerMsg msg) => ReceivesMessage (MonitorT monitorMsg (innerM innerMsg (Either monitorMsg innerMsg))) msg
+instance (ReceivesMessage innerM msg) => ReceivesMessage (MonitorT monitorMsg innerM) msg
+instance ReceivesMessage (ProcessTM msg outer) msg
 
 class CanReceiveMessage :: Type -> (Type -> Type) -> Constraint
 class CanReceiveMessage msg m
